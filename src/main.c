@@ -42,77 +42,93 @@ int eval(st* st, ht* ht, int model) {
     return ((!e1 || e2) && (!e2 || e1));
 }
 
-// procura um modelo que satisfaca a formula dada sua arvore sintatica
-void get_model(st* st, ht* ht, l* l) {
-        // modelo = bitmask
-        int final_model;
-
-        // verifica se a formula eh satisfativel
+// verifica se a formula eh satisfativel
+int is_satisfiable(st* st, ht* ht, l* l, int* final_model) {
         int sats = 0;
+        
+        // modelo = bitmask
+        // procura um modelo que satisfaca a formula dada sua arvore sintatica
         for(int model = 0; model < (1 << ht->sz) && !sats; model++) {
             sats |= eval(st, ht, model);
-            if(sats) final_model = model;
+            if(sats) *final_model = model;
         }
 
-        if(!sats) printf("NAO");
-        else {
-            printf("SIM, [");
-
-            node* ptr = l->head;
-            while(ptr != NULL) {
-                if(is_set(final_model, get(ht,ptr->val))) printf("[%s, V]", ptr->val);
-                else printf("[%s, F]",ptr->val);
-
-                if(ptr->nxt != NULL) printf(", ");
-                ptr = ptr->nxt;
-            }
-
-            printf("]");
-        }
-        printf("\n");
-
-        return;
+        return sats;
 }
 
 int main() {
-    FILE* fp;
+    FILE* input;
     char* line = NULL;
     size_t len = 0;
     __ssize_t read;
+    FILE* output;
 
-    fp = fopen("entrada.txt","r");
-    if(fp == NULL) return 1;
+    input = fopen("entrada.txt","r");
+    if(input == NULL) return 1;
+
+    output = fopen("saida.txt","w");
+    if(output == NULL) return 1;
 
     // le cada formula do arquvio, linha por linha
-    while((read = getline(&line,&len,fp)) != -1) {
+    while((read = getline(&line,&len,input)) != -1) {
         // constroi a arvore sintatica da formula
-        printf("formula: %s\n",line);
         st* syn_tree = build_syntax_tree(line);
+        if(syn_tree == NULL) {
+            free_syntax_tree(syn_tree);
+            fclose(input);
+            fclose(output);
+            if(line) free(line);
+            free(input);
+            free(output);
 
-        printf("arvore construida: ");
-        print_syntax_tree(syn_tree);
-        printf("\n");
+            return 1;
+        }
 
         // cria uma hashtable
-        ht* hash_table = new_hashtable();
+        ht* hashtable = new_hashtable();
         l* list = new_list();
 
-        // contando quantos simbolos proposicionais diferentes existem
-        count_prop_symb(syn_tree, hash_table, list);
-        printf("Quantidade de simbolos = %d =?= %d\n", hash_table->sz, list->sz);
+        if(hashtable == NULL || list == NULL) {
+            free_syntax_tree(syn_tree);
+            fclose(input);
+            fclose(output);
+            if(line) free(line);
+            free(input);
+            free(output);
 
-        // procura o modelo que satisfaz a formula
-        get_model(syn_tree,hash_table,list);
+            return 1;
+        }
+
+        // contando quantos simbolos proposicionais diferentes existem
+        count_prop_symb(syn_tree, hashtable, list);
+
+        // verifica se a formula eh satisfativel
+        int final_model;
+        if(is_satisfiable(syn_tree,hashtable,list, &final_model)) {
+            fprintf(output,"SIM,");
+
+            fprintf(output,"[");
+            node* ptr = list->head;
+            while(ptr != NULL) {
+                if(is_set(final_model, get(hashtable,ptr->val))) fprintf(output,"[%s, V]", ptr->val);
+                else fprintf(output,"[%s, F]",ptr->val);
+
+                if(ptr->nxt != NULL) fprintf(output,",");
+                ptr = ptr->nxt;
+            }
+            fprintf(output,"]\n");
+
+        } else fprintf(output,"NAO,[]\n");
 
         // frees
         free_syntax_tree(syn_tree);
-        free_hashtable(hash_table);
+        free_hashtable(hashtable);
         free_list(list);
     }
 
-    fclose(fp);
-
     if(line) free(line);
+    fclose(input);
+    fclose(output);
 
     return 0;
 }

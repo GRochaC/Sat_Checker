@@ -23,6 +23,8 @@ char* slice(char* str, int start, int end) {
 // constroi a arvore sintatica de uma formula bem-formada
 st* build_syntax_tree(char* formula) {
     st* syn_tree = (st*) malloc(sizeof(st));
+    if(syn_tree == NULL) return NULL;
+    
     syn_tree->primary_operator = NULL;
     syn_tree->left = NULL;
     syn_tree->right = NULL;
