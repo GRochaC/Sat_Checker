@@ -1,3 +1,6 @@
+#ifndef SYNTAX_TREE_H
+#define SYNTAX_TREE_H
+
 #include "stdlib.h"
 #include "string.h"
 
@@ -8,7 +11,7 @@ typedef struct Syntax_Tree {
     char* symb;
 } st;
 
-
+// pega o intervalo str[start, end)
 char* slice(char* str, int start, int end) {
     int sz = end-start;
     char* ret = (char*) malloc((sz+1)+sizeof(char));
@@ -17,6 +20,7 @@ char* slice(char* str, int start, int end) {
     return ret;
 }
 
+// constroi a arvore sintatica de uma formula bem-formada
 st* build_syntax_tree(char* formula) {
     st* syn_tree = (st*) malloc(sizeof(st));
     syn_tree->primary_operator = NULL;
@@ -80,6 +84,7 @@ st* build_syntax_tree(char* formula) {
     return syn_tree;
 }
 
+// imprime a arvore sintatica
 void print_syntax_tree(st* syn_tree) {
     // simb prop
     if(syn_tree->primary_operator == NULL) {
@@ -107,6 +112,7 @@ void print_syntax_tree(st* syn_tree) {
     return;
 }
 
+// libera a arvore sintatica
 void free_syntax_tree(st* syn_tree) {
     if(syn_tree == NULL) return;
 
@@ -117,3 +123,5 @@ void free_syntax_tree(st* syn_tree) {
     free(syn_tree);
     return;
 }
+
+#endif

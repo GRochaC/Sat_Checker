@@ -2,8 +2,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "syntax_tree.h"
-#include "hash_table.h"
-#include "list.h"
+#include "data_structures.h"
 
 // conta a quantidade de simb. prop. diferentes na formula
 void count_prop_symb(st* st, ht* ht, l* l) {
@@ -11,7 +10,7 @@ void count_prop_symb(st* st, ht* ht, l* l) {
         // se ja nao foi adiciona, adiciona a hashtable: ht[symb] = sz
         if(!find(ht,st->symb)) {
             add(ht,st->symb,ht->sz);
-            
+            append(l,st->symb);
         }
         return;
     }
@@ -22,23 +21,57 @@ void count_prop_symb(st* st, ht* ht, l* l) {
     return;
 }
 
+// verifica se o idx-esimo bit esta ligado
 int is_set(int bitmask, int idx) {
     return (bitmask & (1 << idx));
 }
 
-int eval(st* st, ht* ht, int modelo) {
+// avalia a valorcao booleana de uma formula dada sua arvore sintatica e uma valoracao booleana
+int eval(st* st, ht* ht, int model) {
     if(st->primary_operator == NULL) {
-        return is_set(modelo, get(ht,st->symb));
+        return is_set(model, get(ht,st->symb));
     }
 
-    int e1 = (st->left != NULL) ? eval(st->left,ht,modelo) : -1;
-    int e2 = eval(st->right,ht,modelo);
+    int e1 = (st->left != NULL) ? eval(st->left,ht,model) : -1;
+    int e2 = eval(st->right,ht,model);
 
     if(strncmp(st->primary_operator, "~",1) == 0) return !e2;
     if(strncmp(st->primary_operator, "&", 1) == 0) return (e1 && e2);
     if(strncmp(st->primary_operator, "|", 1) == 0) return (e1 || e2);
     if(strncmp(st->primary_operator, "->", 2) == 0) return (!e1 || e2);
     return ((!e1 || e2) && (!e2 || e1));
+}
+
+// procura um modelo que satisfaca a formula dada sua arvore sintatica
+void get_model(st* st, ht* ht, l* l) {
+        // modelo = bitmask
+        int final_model;
+
+        // verifica se a formula eh satisfativel
+        int sats = 0;
+        for(int model = 0; model < (1 << ht->sz) && !sats; model++) {
+            sats |= eval(st, ht, model);
+            if(sats) final_model = model;
+        }
+
+        if(!sats) printf("NAO");
+        else {
+            printf("SIM, [");
+
+            node* ptr = l->head;
+            while(ptr != NULL) {
+                if(is_set(final_model, get(ht,ptr->val))) printf("[%s, V]", ptr->val);
+                else printf("[%s, F]",ptr->val);
+
+                if(ptr->nxt != NULL) printf(", ");
+                ptr = ptr->nxt;
+            }
+
+            printf("]");
+        }
+        printf("\n");
+
+        return;
 }
 
 int main() {
@@ -61,30 +94,20 @@ int main() {
         printf("\n");
 
         // cria uma hashtable
-        ht* hash_table = build_hash_table();
+        ht* hash_table = new_hashtable();
         l* list = new_list();
 
         // contando quantos simbolos proposicionais diferentes existem
         count_prop_symb(syn_tree, hash_table, list);
-        printf("Quantidade de simbolos = %d\n", hash_table->sz);
+        printf("Quantidade de simbolos = %d =?= %d\n", hash_table->sz, list->sz);
 
-        // modelo = bitmask
-        int modelo_final;
-
-        // verifica se a formula eh satisfativel
-        int sats = 0;
-        printf("Satisfativel? ");
-        for(int modelo = 0; modelo < (1 << hash_table->sz) && !sats; modelo++) {
-            sats |= eval(syn_tree, hash_table, modelo);
-            if(sats) modelo_final = modelo;
-        }
-
-        if(!sats) printf("NAO\n");
-        else printf("SIM, %d\n",modelo_final);
+        // procura o modelo que satisfaz a formula
+        get_model(syn_tree,hash_table,list);
 
         // frees
         free_syntax_tree(syn_tree);
-        free_hash_table(hash_table);
+        free_hashtable(hash_table);
+        free_list(list);
     }
 
     fclose(fp);
