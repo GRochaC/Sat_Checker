@@ -27,13 +27,13 @@ int is_set(int bitmask, int idx) {
 }
 
 // avalia a valorcao booleana de uma formula dada sua arvore sintatica e uma valoracao booleana
-int eval(st* st, ht* ht, int model) {
+int eval(st* st, ht* ht, long long bool_eval) {
     if(st->primary_operator == NULL) {
-        return is_set(model, get(ht,st->symb));
+        return is_set(bool_eval, get(ht,st->symb));
     }
 
-    int e1 = (st->left != NULL) ? eval(st->left,ht,model) : -1;
-    int e2 = eval(st->right,ht,model);
+    int e1 = (st->left != NULL) ? eval(st->left,ht,bool_eval) : -1;
+    int e2 = eval(st->right,ht,bool_eval);
 
     if(strncmp(st->primary_operator, "~",1) == 0) return !e2;
     if(strncmp(st->primary_operator, "&", 1) == 0) return (e1 && e2);
@@ -43,31 +43,42 @@ int eval(st* st, ht* ht, int model) {
 }
 
 // verifica se a formula eh satisfativel
-int is_satisfiable(st* st, ht* ht, l* l, int* final_model) {
+int is_satisfiable(st* st, ht* ht, long long* model) {
         int sats = 0;
         
         // modelo = bitmask
         // procura um modelo que satisfaca a formula dada sua arvore sintatica
-        for(int model = 0; model < (1 << ht->sz) && !sats; model++) {
-            sats |= eval(st, ht, model);
-            if(sats) *final_model = model;
+        for(long long bool_eval = 0; bool_eval < (1 << ht->sz) && !sats; bool_eval++) {
+            sats |= eval(st, ht, bool_eval);
+            if(sats) *model = bool_eval;
         }
 
         return sats;
 }
 
-int main() {
+int main(int argc, char** argv) {
+    if(argc != 2) {
+        printf("ERRO: Arquivo de entrada não informado.\n");
+        return 1;
+    }
+
     FILE* input;
     char* line = NULL;
     size_t len = 0;
     __ssize_t read;
     FILE* output;
 
-    input = fopen("entrada.txt","r");
-    if(input == NULL) return 1;
+    input = fopen(argv[1],"r");
+    if(input == NULL) {
+        printf("ERRO: Não foi possível abrir o arquivo de entrada.\n");
+        return 1;
+    }
 
     output = fopen("saida.txt","w");
-    if(output == NULL) return 1;
+    if(output == NULL) {
+        printf("ERRO: Não foi possível criar o arquivo de saída.\n");
+        return 1;
+    }
 
     // le cada formula do arquvio, linha por linha
     while((read = getline(&line,&len,input)) != -1) {
@@ -81,6 +92,7 @@ int main() {
             free(input);
             free(output);
 
+            printf("ERRO: Não foi possível criar a árvore sintática.\n");
             return 1;
         }
 
@@ -96,21 +108,23 @@ int main() {
             free(input);
             free(output);
 
+            printf("ERRO: Não foi possível criar as estruturas de dados.\n");
             return 1;
         }
 
         // contando quantos simbolos proposicionais diferentes existem
         count_prop_symb(syn_tree, hashtable, list);
 
+
         // verifica se a formula eh satisfativel
-        int final_model;
-        if(is_satisfiable(syn_tree,hashtable,list, &final_model)) {
+        long long model;
+        if(is_satisfiable(syn_tree,hashtable, &model)) {
             fprintf(output,"SIM,");
 
             fprintf(output,"[");
             node* ptr = list->head;
             while(ptr != NULL) {
-                if(is_set(final_model, get(hashtable,ptr->val))) fprintf(output,"[%s, V]", ptr->val);
+                if(is_set(model, get(hashtable,ptr->val))) fprintf(output,"[%s, V]", ptr->val);
                 else fprintf(output,"[%s, F]",ptr->val);
 
                 if(ptr->nxt != NULL) fprintf(output,",");
@@ -130,5 +144,6 @@ int main() {
     fclose(input);
     fclose(output);
 
+    printf("\"saida.txt\" gerado com sucesso!\n");
     return 0;
 }

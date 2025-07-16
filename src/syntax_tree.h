@@ -22,6 +22,7 @@ char* slice(char* str, int start, int end) {
 
 // constroi a arvore sintatica de uma formula bem-formada
 st* build_syntax_tree(char* formula) {
+    //printf("formula atual: %s\n",formula);
     st* syn_tree = (st*) malloc(sizeof(st));
     if(syn_tree == NULL) return NULL;
     
@@ -32,21 +33,22 @@ st* build_syntax_tree(char* formula) {
 
     // remove os '\0'
     for(int i = 0; i < strlen(formula); i++) formula[i] = (formula[i] == '\n') ? '\0' : formula[i];
-
+    
     // caso negacao
     if(formula[0] == '~') {
         syn_tree->primary_operator = strdup("~");
         st* r = build_syntax_tree(&formula[1]);
         syn_tree->right = r;
-
+        
         return syn_tree;
     }
-
+    
     // caso simbolo proposicional
     if(formula[0] != '(') {
         syn_tree->symb = strdup(formula);
         return syn_tree;
     }
+    
 
     // caso op binario
     int open_par = 0;

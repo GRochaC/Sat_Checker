@@ -1,8 +1,0 @@
-SIM,[[p, V],[q, F]]
-SIM,[[p, F],[q, F]]
-SIM,[[p, V],[q, F]]
-SIM,[[p, V],[q, V]]
-NAO,[]
-SIM,[[p, F],[q, F]]
-SIM,[[q, V]]
-SIM,[[p, F],[q, F]]
