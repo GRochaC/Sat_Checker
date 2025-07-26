@@ -12,6 +12,7 @@ gcc-14 -o sat_checker src/main.c
 ```
 
 ### Execução
+Escolha um dos arquivos exemplos e execute o seguinte comando no terminal:
 ```bash
 ./sat_checker exemplo_i.txt
 ```
