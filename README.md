@@ -13,5 +13,5 @@ gcc-14 -o sat_checker src/main.c
 
 ### Execução
 ```bash
-./sat_checker <nome do arquivo de entrada>.txt
-``
+./sat_checker exemplo_i.txt
+```
